@@ -1,0 +1,4 @@
+# .gitignore
+google-credentials.json
+.env
+.vercel

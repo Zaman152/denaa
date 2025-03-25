@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: fastapi-amazon-service
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_PROJECT_ID
+        sync: false
+      - key: GOOGLE_PRIVATE_KEY_ID
+        sync: false
+      - key: GOOGLE_PRIVATE_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_EMAIL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_AUTH_URI
+        sync: false
+      - key: GOOGLE_TOKEN_URI
+        sync: false
+      - key: GOOGLE_CERT_URL
+        sync: false
+      - key: GOOGLE_X509_CERT_URL
+        sync: false
+      - key: DOCUMENT_ID
+        sync: false 
