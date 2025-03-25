@@ -47,14 +47,16 @@ def read_root():
 def hi():
     return {"message": "Hello World"}
 
+@app.get("/fun1")
 @app.post("/fun1")
 async def fun1():
     try:
         title = await generate_amazon_title()
-        return title
+        return {"title": title, "status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error triggering functions: {e}")
 
+@app.get("/trigger")
 @app.post("/trigger")
 async def trigger_functions():
     try:
@@ -69,7 +71,13 @@ async def trigger_functions():
         desc = await generate_amazon_description()
         title = await generate_amazon_title()
         print("Results Generated")
-        # return {"keywords": keywords, "bullets": bullets,"desc": desc, "title": title}
+        return {
+            "status": "success", 
+            "keywords": keywords, 
+            "bullets": bullets,
+            "description": desc, 
+            "title": title
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error triggering functions: {e}")
 
@@ -210,7 +218,7 @@ async def generate_amazon_title():
         title = response.choices[0].message.content.strip()
         print("Generated Amazon Product Title")
         append_to_google_doc(DOCUMENT_ID, f"Amazon Product Title:\n{title}")
-        # return title
+        return title
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating title: {str(e)}")
 
@@ -226,9 +234,9 @@ async def generate_amazon_bullets():
         bullets = response.choices[0].message.content.strip()
         print("Generated Amazon Bullet Points")
         append_to_google_doc(DOCUMENT_ID, f"Amazon Bullet Points:\n{bullets}")
-        # return bullets
+        return bullets
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating title: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating bullets: {str(e)}")
 
 async def generate_amazon_backend_keywords():
     try:
@@ -242,9 +250,9 @@ async def generate_amazon_backend_keywords():
         backend_keywords = response.choices[0].message.content.strip()
         print("Generated Amazon Product Keywords")
         append_to_google_doc(DOCUMENT_ID, f"Amazon Product Keywords:\n{backend_keywords}")
-        # return backend_keywords
+        return backend_keywords
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating title: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating keywords: {str(e)}")
 
 async def generate_amazon_description():
     try:
@@ -259,9 +267,9 @@ async def generate_amazon_description():
         optimized_description = response.choices[0].message.content.strip()
         print("Generated Amazon Product Description")
         append_to_google_doc(DOCUMENT_ID, f"Amazon Product Description:\n{optimized_description}")
-        # return optimized_description
+        return optimized_description
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating title: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating description: {str(e)}")
 
 credentials_file = "google-credentials.json"
 amazon_sheet_url = "https://docs.google.com/spreadsheets/d/1A3SW1gqTQrB0Z5jGm0PcNQJnw2IcGFHuZd1aRPLt8ZQ/edit"
@@ -278,7 +286,7 @@ title_prompt = f"""
     - Analyze Audience & Platform: Optimize the title for Amazon shoppers, balancing readability and SEO.
     - Keywords & Relevance: Include high-volume keywords from the "Keyword Doc" naturally.
     - Optimization for Click-Through: Prioritize readability, use title casing, and limit to 200 characters.
-    - Unique Selling Points (USP): Highlight 1-2 differentiators (e.g., “Eco-Friendly,” “Fast-Absorbing”).
+    - Unique Selling Points (USP): Highlight 1-2 differentiators (e.g., "Eco-Friendly," "Fast-Absorbing").
     - Repetition: Titles must not contain the same word more than twice.
 
     Generate an Amazon-style product title for the following product description:
@@ -295,11 +303,11 @@ bullets_prompt = f"""
 
     2. Integrate High-Impact Keywords Naturally  
     - Utilize highly relevant, high-search-volume keywords from Amazon search trends without keyword stuffing.  
-    - Maintain natural readability while optimizing for search rankings, ensuring compliance with Amazon’s guidelines.  
+    - Maintain natural readability while optimizing for search rankings, ensuring compliance with Amazon's guidelines.  
 
     3. Prioritize Benefits Over Features  
     - Transform technical features into customer-centric benefits.  
-    - Example: Instead of “Waterproof Design,” write “WATERPROOF DESIGN: Stay dry in any weather with a fully waterproof build, ideal for outdoor adventures.”  
+    - Example: Instead of "Waterproof Design," write "WATERPROOF DESIGN: Stay dry in any weather with a fully waterproof build, ideal for outdoor adventures."  
 
     4. Structure for Readability & Engagement  
     - Format: Start each bullet point with a capitalized key feature for clarity (e.g., "PREMIUM MATERIAL: …").  
@@ -316,22 +324,22 @@ bullets_prompt = f"""
     {product_url}
     """
 keywords_prompt = f"""
-    Act as an Amazon SEO expert. Generate a **single** backend keyword string (100 characters max) that maximizes discoverability while strictly following Amazon’s guidelines.
+    Act as an Amazon SEO expert. Generate a **single** backend keyword string (100 characters max) that maximizes discoverability while strictly following Amazon's guidelines.
 
     **Instructions:**
     **Extract Unique, High-Relevance Keywords**
-    - Use only high-converting, relevant keywords from the “Keyword Doc”
-    - Use the “URLs” to learn about the product to choose 100% relevant keywords.
+    - Use only high-converting, relevant keywords from the "Keyword Doc"
+    - Use the "URLs" to learn about the product to choose 100% relevant keywords.
     - Remove duplicate or closely related terms (e.g., exclude both "organic shampoo" and "shampoo organic").
 
-    **Follow Amazon’s Backend Keyword Policies**
+    **Follow Amazon's Backend Keyword Policies**
     ✅ No Commas – Separate keywords with spaces for full character efficiency.
-    ✅ No Competitor Brand Names, ASINs, or Promotional Claims (e.g., avoid “best shampoo,” “top-rated”).
+    ✅ No Competitor Brand Names, ASINs, or Promotional Claims (e.g., avoid "best shampoo," "top-rated").
     ✅ No Redundant or Overlapping Keywords (e.g., avoid using both "dandruff shampoo" and "anti-dandruff shampoo").
 
     **Prioritize Broad Discoverability & Conversion Potential**
     - Include synonyms, regional spellings, and related terms customers might search for.
-    - Cover different customer pain points (e.g., “itchy scalp relief,” “hair regrowth”).
+    - Cover different customer pain points (e.g., "itchy scalp relief," "hair regrowth").
     - Expand with related but distinct keywords that increase exposure across multiple search queries.
 
     **Utilize STRICTLY 100 CHARACTERS Limit Without Wasting Space**
@@ -356,7 +364,7 @@ keywords_prompt = f"""
 description_prompt = f"""
     Act as an Amazon copywriting expert with 10+ years of experience crafting high-converting, SEO-optimized product descriptions 
     that enhance product visibility and drive sales. Your goal is to create a clear, engaging, and persuasive product description 
-    that highlights the product’s unique features and key benefits while seamlessly integrating relevant keywords to improve search rankings and sales volumes.
+    that highlights the product's unique features and key benefits while seamlessly integrating relevant keywords to improve search rankings and sales volumes.
     
     Step 1: Research the Product from URLs:
     - Extract all relevant product information from the provided URLs.
@@ -365,13 +373,13 @@ description_prompt = f"""
     - Note any customer reviews or feedback to identify common pain points or standout benefits.
     
     Step 2: Write the Product Description:
-    - **Engaging Introduction**: Begin with a compelling hook that immediately grabs the reader’s attention.
-    - Clearly define the product’s primary purpose and the key problem it solves.
+    - **Engaging Introduction**: Begin with a compelling hook that immediately grabs the reader's attention.
+    - Clearly define the product's primary purpose and the key problem it solves.
     - Use powerful adjectives and action-driven language to make it emotionally appealing.
     
     - **Key Features & Benefits**: List each feature concisely, followed by a short, benefit-driven explanation.
     - Prioritize clarity, avoiding jargon while maintaining a professional and trustworthy tone.
-    - Integrate relevant Amazon SEO keywords naturally for better visibility from the “Keyword Doc.”
+    - Integrate relevant Amazon SEO keywords naturally for better visibility from the "Keyword Doc."
     
     - **Unique Selling Points**: Emphasize 1-2 standout features that set this product apart from competitors.
     - Highlight any special materials, advanced technology, or unique design elements.
