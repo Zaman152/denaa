@@ -51,8 +51,8 @@ def hi():
 @app.post("/fun1")
 async def fun1():
     try:
-        title = await generate_amazon_title()
-        return {"title": title, "status": "success"}
+        await generate_amazon_title()
+        return {"status": "success", "message": "Title generated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error triggering functions: {e}")
 
@@ -66,17 +66,14 @@ async def trigger_functions():
         match_and_create_google_sheet(credentials_file, amazon_sheet_url, scrap_sheet_url, output_sheet_url, product_url)
        
         print("Generating Google Docs:")
-        keywords = await generate_amazon_backend_keywords()
-        bullets = await generate_amazon_bullets()
-        desc = await generate_amazon_description()
-        title = await generate_amazon_title()
+        await generate_amazon_backend_keywords()
+        await generate_amazon_bullets()
+        await generate_amazon_description()
+        await generate_amazon_title()
         print("Results Generated")
         return {
             "status": "success", 
-            "keywords": keywords, 
-            "bullets": bullets,
-            "description": desc, 
-            "title": title
+            "message": "All content generated successfully"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error triggering functions: {e}")
